@@ -1,5 +1,3 @@
-local vim = vim
-
 local M = {}
 
 function M.default(node)
