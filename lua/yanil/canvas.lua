@@ -3,7 +3,6 @@ local validate = vim.validate
 
 local utils = require("yanil.utils")
 
-
 -- hooks
 -- on_open(cwd)
 -- on_exit()
@@ -17,36 +16,13 @@ local M = {
 	keys = {},
 }
 
-local buffer_options = {
-	bufhidden = "wipe",
-	buftype = "nofile",
-	modifiable = false,
-	filetype = "Yanil",
-}
-
-local win_options = {
-	"noswapfile",
-	"norelativenumber",
-	"nonumber",
-	"nolist",
-	"nobuflisted",
-	"winfixwidth",
-	"winfixheight",
-	"nofoldenable",
-	"nospell",
-	"foldmethod=manual",
-	"foldcolumn=0",
-	"signcolumn=yes:1",
-	"bufhidden=wipe",
-	"filetype=Yanil",
-}
-
 function M.setup(opts)
-	M.sections = opts.sections
+	M.sections = opts.sections or {}
 
 	for _, section in ipairs(M.sections) do
 		section:set_post_changes_fn(M.on_section_changed)
-		for _, key in ipairs(section:watching_keys() or {}) do
+
+		for _, key in ipairs(section:watching_keys()) do
 			local section_names = M.keys[key] or {}
 			table.insert(section_names, section.name)
 			M.keys[key] = section_names
@@ -105,9 +81,18 @@ local function create_buf(name)
 	if name then
 		api.nvim_buf_set_name(bufnr, name)
 	end
+
+	local buffer_options = {
+		bufhidden = "wipe",
+		buftype = "nofile",
+		modifiable = false,
+		filetype = "Yanil",
+	}
+
 	for k, v in ipairs(buffer_options) do
 		api.nvim_buf_set_option(bufnr, k, v)
 	end
+
 	return bufnr
 end
 
@@ -116,6 +101,23 @@ local function create_win(bufnr)
 	api.nvim_command("noautocmd setlocal bufhidden=wipe")
 
 	api.nvim_win_set_buf(0, bufnr)
+
+	local win_options = {
+		"noswapfile",
+		"norelativenumber",
+		"nonumber",
+		"nolist",
+		"nobuflisted",
+		"winfixwidth",
+		"winfixheight",
+		"nofoldenable",
+		"nospell",
+		"foldmethod=manual",
+		"foldcolumn=0",
+		"signcolumn=yes:1",
+		"bufhidden=wipe",
+		"filetype=Yanil",
+	}
 
 	for _, win_opt in ipairs(win_options) do
 		api.nvim_command("noautocmd setlocal " .. win_opt)
@@ -179,12 +181,11 @@ function M.close()
 end
 
 function M.toggle()
-	local winnr = M.winnr()
-	if not winnr then
-		M.open()
-	else
+	if M.winnr() then
 		M.close()
+		return
 	end
+	M.open()
 end
 
 function M.draw()

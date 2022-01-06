@@ -21,6 +21,7 @@ function M:total_lines()
 end
 
 function M:watching_keys()
+	return vim.tbl_keys(self.keymaps or {})
 end
 
 function M:on_key(linenr, key)

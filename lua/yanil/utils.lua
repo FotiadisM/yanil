@@ -73,18 +73,6 @@ function M.spawn(path, options, callback)
 	end)
 end
 
-function M.is_binary(path)
-	validate({ path = { path, "string" } })
-
-	local output = vim.fn.system("file --mime -L -n -N -p -b -d " .. path)
-	if vim.v.shell_error > 0 then
-		api.nvim_err_writeln(string.format("check file %s mime encoding failed: %s", path, output))
-		return
-	end
-
-	return output:find("x-empty") == nil and output:find("binary") ~= nil
-end
-
 function M.callback(key, ...)
 	if not M.callbacks[key] then
 		return

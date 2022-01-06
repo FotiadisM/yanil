@@ -1,10 +1,11 @@
 local api = vim.api
 local loop = vim.loop
+local git = require("yanil.git")
 
-local Section = require("yanil/section")
-local nodelib = require("yanil/node")
+local Section = require("yanil.section")
+local nodelib = require("yanil.node")
 
-local utils = require("yanil/utils")
+local utils = require("yanil.utils")
 
 local M = Section:new({
 	name = "Tree",
@@ -13,24 +14,36 @@ local M = Section:new({
 function M:setup(opts)
 	opts = opts or {}
 
-	self.draw_opts = opts.draw_opts
-	self.filters = opts.filters
-
 	local default_keymaps = {
 		["<CR>"] = self.open_node,
-		s = self:gen_open_file_node("vsplit"),
-		i = self:gen_open_file_node("split"),
+		["<BS>"] = self.close_node,
+
+		l = self.open_node,
+		h = self.close_node,
+		v = self:gen_open_file_node("vsplit"),
+		s = self:gen_open_file_node("split"),
+
+		r = self.rename_node,
+		a = self.create_node,
+		d = self.delete_node,
+
+		["]c"] = git.jump_next,
+        ["[c"] = git.jump_prev,
+
 		C = self.cd_to_node,
 		U = self.cd_to_parent,
 		K = self.go_to_first_child,
 		J = self.go_to_last_child,
-		["<C-K>"] = self:gen_go_to_sibling(-1),
-		["<C-J>"] = self:gen_go_to_sibling(1),
-		r = self.force_refresh_node,
+
 		R = self.force_refresh_tree,
+		q = function()
+			vim.fn.execute("quit")
+		end,
 	}
 
-	self.keymaps = vim.tbl_deep_extend("keep", opts.keymaps or {}, default_keymaps)
+	self.draw_opts = opts.draw_opts
+	self.filters = opts.filters
+	self.keymaps = opts.keymaps or {}
 end
 
 function M:set_cwd(cwd)
@@ -104,13 +117,15 @@ function M:draw_node(node, opts, action)
 	if not lines then
 		return
 	end
-	local texts = { {
-		line_start = 0,
-		line_end = opts.non_recursive and #lines or total_lines,
-		lines = lines,
-	} }
+
 	return {
-		texts = texts,
+		texts = {
+			{
+				line_start = 0,
+				line_end = opts.non_recursive and #lines or total_lines,
+				lines = lines,
+			},
+		},
 		highlights = highlights,
 	}
 end
@@ -146,10 +161,6 @@ end
 
 function M:on_exit()
 	self.dir_state = self.root:dump_state()
-end
-
-function M:watching_keys()
-	return vim.tbl_keys(self.keymaps)
 end
 
 function M:on_key(linenr, key)
@@ -201,6 +212,17 @@ function M:open_node(node)
 		},
 		highlights = highlights,
 	}
+end
+
+function M:close_node(node)
+	node = node:is_dir() and node or node.parent
+	node = node.is_open and node or node.parent
+
+	self:refresh(node, {}, function()
+		node:close()
+	end)
+
+	self:go_to_node(node)
 end
 
 function M:cd_to_node(node)
@@ -316,6 +338,18 @@ function M:go_to_sibling(node, n)
 	end
 
 	return self:go_to_node(sibling)
+end
+
+function M:create_node(node) end
+
+function M:delete_node(node) end
+
+function M:rename_node(node)
+	vim.ui.input({ prompt = "Name" }, function(input)
+		if input then
+			print(vim.inspect(input))
+		end
+	end)
 end
 
 return M

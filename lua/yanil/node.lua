@@ -2,7 +2,7 @@ local api = vim.api
 local validate = vim.validate
 local loop = vim.loop
 
-local utils = require("yanil/utils")
+local utils = require("yanil.utils")
 local path_sep = utils.path_sep
 
 local startswith = vim.startswith
