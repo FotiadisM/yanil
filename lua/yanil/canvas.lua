@@ -64,10 +64,10 @@ end
 function M.on_exit()
 	M.trigger_hook("on_exit")
 
-	M.cursor = api.nvim_win_get_cursor(M.winnr())
+	M.cursor = api.nvim_win_get_cursor(M.get_winnr())
 end
 
-function M.winnr()
+function M.get_winnr()
 	for _, winnr in ipairs(api.nvim_list_wins()) do
 		local bufname = api.nvim_buf_get_name(api.nvim_win_get_buf(winnr))
 		if bufname:match(".*/" .. M.bufname .. "$") then
@@ -125,7 +125,7 @@ local function create_win(bufnr)
 end
 
 function M.get_current_linenr()
-	local winnr = M.winnr()
+	local winnr = M.get_winnr()
 	if not winnr then
 		return
 	end
@@ -150,7 +150,7 @@ function M.set_keymaps()
 end
 
 function M.open(cwd)
-	if M.winnr() then
+	if M.get_winnr() then
 		return
 	end
 
@@ -164,7 +164,7 @@ function M.open(cwd)
 	M.set_keymaps()
 
 	if M.cursor then
-		api.nvim_win_set_cursor(M.winnr(), M.cursor)
+		api.nvim_win_set_cursor(M.get_winnr(), M.cursor)
 	end
 
 	-- TODO: how to trigger bufenter?
@@ -172,7 +172,7 @@ function M.open(cwd)
 end
 
 function M.close()
-	local winnr = M.winnr()
+	local winnr = M.get_winnr()
 	if not winnr then
 		return
 	end
@@ -181,7 +181,7 @@ function M.close()
 end
 
 function M.toggle()
-	if M.winnr() then
+	if M.get_winnr() then
 		M.close()
 		return
 	end
@@ -250,9 +250,9 @@ function M.apply_changes(linenr, changes)
 	-- TODO: set line relative to section start linenr
 	local cursor = changes.cursor
 	if cursor then
-		local winnr = M.winnr()
+		local winnr = M.get_winnr()
 		local current_cursor = api.nvim_win_get_cursor(winnr)
-		pcall(api.nvim_win_set_cursor, M.winnr(), {
+		pcall(api.nvim_win_set_cursor, M.get_winnr(), {
 			linenr + (cursor.line or 0) + 1,
 			current_cursor[2] + (cursor.col or 0),
 		})
@@ -322,9 +322,12 @@ function M.register_hooks(hooks)
 end
 
 function M.trigger_hook(name, ...)
+	-- trigger canvas hooks
 	for _, fn in ipairs(M.hooks[name] or {}) do
 		fn(...)
 	end
+
+	-- trigger sections' hooks
 	for _, section in ipairs(M.sections) do
 		if section[name] then
 			section[name](section, ...)

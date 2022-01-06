@@ -2,12 +2,13 @@ local api = vim.api
 local loop = vim.loop
 local git = require("yanil.git")
 
-local Section = require("yanil.section")
+local section = require("yanil.section")
 local nodelib = require("yanil.node")
-
 local utils = require("yanil.utils")
 
-local M = Section:new({
+local Job = require("plenary.job")
+
+local M = section:new({
 	name = "Tree",
 })
 
@@ -23,12 +24,12 @@ function M:setup(opts)
 		v = self:gen_open_file_node("vsplit"),
 		s = self:gen_open_file_node("split"),
 
-		r = self.rename_node,
 		a = self.create_node,
 		d = self.delete_node,
+		r = self.rename_node,
 
 		["]c"] = git.jump_next,
-        ["[c"] = git.jump_prev,
+		["[c"] = git.jump_prev,
 
 		C = self.cd_to_node,
 		U = self.cd_to_parent,
@@ -340,15 +341,94 @@ function M:go_to_sibling(node, n)
 	return self:go_to_node(sibling)
 end
 
-function M:create_node(node) end
+function M:create_node(node)
+	node = node:is_dir() and node or node.parent
+	node = node.is_open and node or node.parent
 
-function M:delete_node(node) end
+	vim.ui.input({ prompt = "Name" }, function(input)
+		if not input or input == "" then
+			return
+		end
+
+		local path = node.abs_path .. input
+		if self.root:find_node_by_path(path) then
+			vim.notify(path .. "already exists", "WARN")
+			return
+		end
+
+		local dir = vim.fn.fnamemodify(path, ":h")
+		local _, code = Job:new({ command = "mkdir", args = { "-p", dir } }):sync()
+		if code ~= 0 then
+			vim.notify("mkdir -p " .. dir .. " failed", "ERROR")
+			return
+		end
+
+		if vim.endswith(path, "/") then
+			local _, code = Job:new({ command = "mkdir", args = { "-p", path } }):sync()
+			if code ~= 0 then
+				vim.notify("mkdir -p " .. path .. " failed", "ERROR")
+				return
+			end
+		else
+			local _, code = Job:new({ command = "touch", args = { path } }):sync()
+			if code ~= 0 then
+				vim.notify("touch " .. path .. " failed", "ERROR")
+				return
+			end
+		end
+
+		self:force_refresh_node(node)
+		git.update(self.cwd)
+
+		local new_node = self.root:find_node_by_path(path)
+		if not new_node then
+			vim.notify("create_node failed", "WARN")
+			return
+		end
+
+		self:go_to_node(new_node)
+	end)
+end
+
+function M:delete_node(node)
+	vim.ui.select({ "no", "yes" }, { prompt = "Are you sure?" }, function(input)
+		if input ~= "yes" then
+			return
+		end
+
+		if node:is_dir() then
+			local _, code = Job:new({ command = "rm", args = { "-r", node.abs_path } }):sync()
+			if code ~= 0 then
+				vim.notify("rm -r " .. node.abs_path(" failed"), "ERROR")
+				return
+			end
+		else
+			local _, code = Job:new({ command = "rm", args = { node.abs_path } }):sync()
+			if code ~= 0 then
+				vim.notify("rm " .. node.abs_path(" failed"), "ERROR")
+				return
+			end
+		end
+
+		self:force_refresh_node(node.parent)
+		git.update(self.cwd)
+	end)
+end
 
 function M:rename_node(node)
-	vim.ui.input({ prompt = "Name" }, function(input)
-		if input then
-			print(vim.inspect(input))
+	vim.ui.input({ prompt = "New name" }, function(input)
+		if not input or input == "" then
+			return
 		end
+
+		local _, code = Job:new({ command = "mv", args = { node.abs_path, node.parent.abs_path .. input } }):sync()
+		if code ~= 0 then
+			vim.notify("mv " .. node.abs_path .. " " .. node.parent.abs_path .. input .. " failed", "ERROR")
+			return
+		end
+
+		self:force_refresh_node(node)
+		git.update(self.cwd)
 	end)
 end
 

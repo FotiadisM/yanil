@@ -57,6 +57,10 @@ tree:setup({
 		v = tree:gen_open_file_node("vsplit"),
 		s = tree:gen_open_file_node("split"),
 
+		a = tree.create_node,
+		d = tree.delete_node,
+		r = tree.rename_node,
+
 		["]c"] = git.jump_next,
         ["[c"] = git.jump_prev,
 
