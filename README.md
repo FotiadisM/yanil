@@ -15,7 +15,7 @@ This not an out-of-box nerdtree alternative (and won't be), but a lib to build y
 ```lua
 use({
 	"FotiadisM/yanil",
-	requires = "kyazdani42/nvim-web-devicons",
+	requires = { "kyazdani42/nvim-web-devicons", "nvim-lua/plenary.nvim" },
 	config = function()
 		require("plugins.yanil")
 	end,
@@ -138,4 +138,3 @@ This plugin is in very early stages and has no backward compatibility guarantees
 
 - [nerdtree](https://github.com/preservim/nerdtree): It's one of the greatest vim plugin.
 - [nvim-tree.lua](https://github.com/kyazdani42/nvim-tree.lua): I learned a lot from it in prototype stage.
-
