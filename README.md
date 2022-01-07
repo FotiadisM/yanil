@@ -8,7 +8,7 @@ This not an out-of-box nerdtree alternative (and won't be), but a lib to build y
 
 ## Prerequisites
 
-- `neovim-0.5.0` or higher.
+- `neovim-0.6.0`
 
 ## Installation
 
@@ -29,10 +29,12 @@ use({
 local canvas = require("yanil.canvas")
 local git = require("yanil.git")
 local decorators = require("yanil.decorators")
+local diagnostics = require("yanil.diagnostics")
 local devicons = require("yanil.devicons")
 local colors = require("yanil.colors")
 
 colors.setup()
+diagnostics.setup()
 git.setup()
 
 local tree = require("yanil.sections.tree"):new()
@@ -41,6 +43,8 @@ tree:setup({
 	draw_opts = {
 		decorators = {
 			decorators.pretty_indent,
+			diagnostics.decorator(),
+			decorators.space,
 			devicons.decorator(),
 			decorators.space,
 			decorators.default,
@@ -62,7 +66,7 @@ tree:setup({
 		r = tree.rename_node,
 
 		["]c"] = git.jump_next,
-        ["[c"] = git.jump_prev,
+		["[c"] = git.jump_prev,
 
 		C = tree.cd_to_node,
 		U = tree.cd_to_parent,
@@ -73,7 +77,17 @@ tree:setup({
 		q = function()
 			vim.fn.execute("quit")
 		end,
-	}
+	},
+	filters = {
+		function(name)
+			local patterns = { "^%.git$" }
+			for _, pat in ipairs(patterns) do
+				if string.find(name, pat) then
+					return true
+				end
+			end
+		end,
+	},
 })
 
 canvas.register_hooks({
@@ -94,8 +108,17 @@ canvas.setup({
 				git.refresh_tree(tree)
 			end,
 		},
+		{
+			event = "DiagnosticChanged",
+			pattern = "*",
+			cmd = function()
+				diagnostics.update()
+				diagnostics.refresh_tree(tree)
+			end,
+		},
 	},
 })
+
 
 vim.api.nvim_set_keymap("n", "<leader>b", ":lua require('yanil.canvas').toggle()<CR>", { silent = true })
 
