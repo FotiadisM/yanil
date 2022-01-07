@@ -5,16 +5,16 @@ local utils = require("yanil.utils")
 
 local default_options = {
 	icons = {
-		Modified = "",
+		Modified = "●",
 		Staged = "",
-		Untracked = "",
+		Untracked = "",
 		Renamed = "",
 		Unmerged = "",
 		Deleted = "",
-		Dirty = "",
-		Ignored = "",
+		Dirty = "●",
+		Ignored = "✖",
 		Clean = "",
-		Unknown = "",
+		Unknown = "",
 	},
 	highlights = {},
 }

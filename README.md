@@ -9,6 +9,7 @@ This not an out-of-box nerdtree alternative (and won't be), but a lib to build y
 ## Prerequisites
 
 - `neovim-0.6.0`
+- A patched font, you can easily get one from [nerd fonts](https://github.com/ryanoasis/nerd-fonts).
 
 ## Installation
 
@@ -132,7 +133,7 @@ This plugin is in very early stages and has no backward compatibility guarantees
 
 - Not support for windows
 - Not support for multi tabs
-- Not support for nvim diagnostics
+- Only supports nvim-0.6 vim.diagnostics
 
 ## Credits
 
