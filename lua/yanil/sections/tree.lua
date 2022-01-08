@@ -21,6 +21,7 @@ function M:setup(opts)
 
 		l = self.open_node,
 		h = self.close_node,
+		o = self.toggle_open_node,
 		v = self:gen_open_file_node("vsplit"),
 		s = self:gen_open_file_node("split"),
 
@@ -200,6 +201,10 @@ function M:open_node(node)
 		return self:open_file_node(node)
 	end
 
+	if node.is_open then
+		return
+	end
+
 	local total_lines = node:total_lines()
 
 	node:toggle()
@@ -228,6 +233,18 @@ function M:close_node(node)
 	end)
 
 	self:go_to_node(node)
+end
+
+function M:toggle_open_node(node)
+	if not node:is_dir() then
+		return self:open_file_node(node)
+	end
+
+	if node.is_open then
+		return self:close_node(node)
+	end
+
+	return self:open_node(node)
 end
 
 function M:cd_to_node(node)
