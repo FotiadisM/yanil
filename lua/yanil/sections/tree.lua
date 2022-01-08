@@ -219,6 +219,10 @@ function M:close_node(node)
 	node = node:is_dir() and node or node.parent
 	node = node.is_open and node or node.parent
 
+	if node == self.root then
+		return
+	end
+
 	self:refresh(node, {}, function()
 		node:close()
 	end)
