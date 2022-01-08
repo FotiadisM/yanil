@@ -11,8 +11,7 @@ local M = {}
 function M.decorator()
 	return function(node)
 		if not node.parent then
-			local text = "פּ"
-			return text, "YanilTreeDirectory"
+			return
 		end
 		if node:is_dir() then
 			local icon = node.is_open and "" or ""
