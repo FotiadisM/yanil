@@ -46,7 +46,7 @@ end
 
 function M.decorator()
 	return function(node)
-		if node == node.root then
+		if not node.parent then
 			return
 		end
 
